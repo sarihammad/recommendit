@@ -1,4 +1,5 @@
 backend/__pycache__/
+backend/**/__pycache__/
 backend/*.py[cod]
 backend/.env
 backend/.venv
