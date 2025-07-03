@@ -2,7 +2,7 @@
 
 RecommendIt is a content-based movie recommendation API built with FastAPI and scikit-learn. It uses TF-IDF vectorization and cosine similarity to suggest movies based on title, genre, and release year. It also supports fuzzy matching of movie titles using Levenshtein distance.
 
-# Features
+## Features
 
 - Recommend similar movies based on title and metadata
 - Optional filters by genre and release year
@@ -10,7 +10,7 @@ RecommendIt is a content-based movie recommendation API built with FastAPI and s
 - Built with FastAPI and scikit-learn
 - Dockerized and ready to run
 
-# How to Run
+## How to Run
 
 1.	Build the Docker image:
 
