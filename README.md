@@ -13,7 +13,7 @@ graph TB
 
     subgraph "Backend Layer"
         API[FastAPI Server]
-        API --> |Cache| Redis[]
+        API --> |Cache| Redis
 
         API --> |ML Models| Models[Hybrid AI Models]
         API --> |Metrics| Prometheus[Prometheus]
