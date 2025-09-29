@@ -12,19 +12,20 @@ RecommendIt is a content-based movie recommendation API built with FastAPI and s
 
 ## How to Run
 
-1.	Build the Docker image:
+1. Build the Docker image:
 
 ```bash
 docker build -t recommendit .
 ```
 
-2.	Run the container:
+2. Run the container:
 
 ```bash
 docker run -p 8000:8000 recommendit
 ```
 
-3.	Make a test request:
+3. Make a test request:
+
 ```bash
 curl -X POST "http://localhost:8000/recommend" \
   -H "Content-Type: application/json" \
