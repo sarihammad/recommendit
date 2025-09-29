@@ -1,14 +1,6 @@
 # RecommendIt - Hybrid Recommendation System
 
-A production-ready hybrid recommendation system that combines collaborative filtering, content-based recommendations, and machine learning to deliver personalized suggestions for books and movies.
-
-## Features
-
-- **Hybrid AI System**: Combines ALS collaborative filtering, item-item similarity, and SBERT content embeddings
-- **Real-time Performance**: Sub-150ms response times with Redis caching and optimized Faiss indices
-- **Cold Start Handling**: Intelligent strategies for new users and items with alpha blending
-- **Production Ready**: Docker containerization, Prometheus metrics, structured logging
-- **Modern Frontend**: Beautiful Next.js interface with responsive design and real-time recommendations
+A hybrid recommendation system that combines collaborative filtering, content-based recommendations, and machine learning to deliver personalized suggestions for books and movies.
 
 ## Architecture
 
@@ -18,30 +10,39 @@ graph TB
         UI[Next.js Frontend]
         UI --> |HTTP/REST| API
     end
-    
+
     subgraph "Backend Layer"
         API[FastAPI Server]
-        API --> |Cache| Redis[(Redis Cache)]
+        API --> |Cache| Redis[]
+
         API --> |ML Models| Models[Hybrid AI Models]
         API --> |Metrics| Prometheus[Prometheus]
     end
-    
+
     subgraph "Data Layer"
         Books[Books Dataset]
         Movies[Movies Dataset]
         Ratings[User Ratings]
     end
-    
+
     subgraph "ML Pipeline"
         Models --> ALS[ALS Collaborative Filtering]
         Models --> Content[Content-Based SBERT]
         Models --> Ranker[LightGBM Ranker]
     end
-    
+
     API --> Books
     API --> Movies
     API --> Ratings
 ```
+
+## Features
+
+- **Hybrid AI System**: Combines ALS collaborative filtering, item-item similarity, and SBERT content embeddings
+- **Real-time Performance**: Sub-150ms response times with Redis caching and optimized Faiss indices
+- **Cold Start Handling**: Intelligent strategies for new users and items with alpha blending
+- **Production Ready**: Docker containerization, Prometheus metrics, structured logging
+- **Modern Frontend**: Beautiful Next.js interface with responsive design and real-time recommendations
 
 ## Quick Start
 
@@ -136,19 +137,19 @@ curl -X POST "http://localhost:8000/feedback" \
 ```mermaid
 flowchart TD
     User[User Request] --> Recall[Recall Stage]
-    
+
     subgraph "Recall Stage - Candidate Generation"
         Recall --> CF[Collaborative Filtering<br/>ALS Matrix Factorization]
         Recall --> II[Item-Item Similarity<br/>Cosine Similarity]
         Recall --> CB[Content-Based<br/>SBERT + Faiss]
-        
+
         CF --> Candidates[~1000 Candidates]
         II --> Candidates
         CB --> Candidates
     end
-    
+
     Candidates --> Rank[Ranking Stage]
-    
+
     subgraph "Ranking Stage - Re-ranking"
         Rank --> Features[Feature Engineering<br/>CF + Content + User + Item + Context]
         Features --> LGBM[LightGBM Ranker<br/>LambdaRank Objective]
@@ -156,7 +157,7 @@ flowchart TD
         Diversity --> Exploration[ε-greedy Exploration]
         Exploration --> Final[Final Top-K Recommendations]
     end
-    
+
     Final --> Response[Response to User]
 ```
 
@@ -176,16 +177,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     Request[User Request] --> Check{User Type?}
-    
+
     Check -->|New User| NewUser[New User Strategy]
     Check -->|Existing User| ExistingUser[Existing User Strategy]
-    
+
     subgraph "New User Strategy"
         NewUser --> ContentOnly[Content-Based Only]
         ContentOnly --> Popularity[Popularity Fallback]
         Popularity --> AlphaBlend[Alpha Blending<br/>α = 0.0 (Content Only)]
     end
-    
+
     subgraph "Existing User Strategy"
         ExistingUser --> InteractionCount{Interaction Count}
         InteractionCount -->|Low| LowInteractions[Low Interactions<br/>α = 0.3 (More Content)]
@@ -193,7 +194,7 @@ flowchart TD
         LowInteractions --> AlphaBlend
         HighInteractions --> AlphaBlend
     end
-    
+
     subgraph "New Item Strategy"
         NewItem[New Item] --> ContentANN[Content ANN Search]
         ContentANN --> Exploration[Exploration Boost]
@@ -201,7 +202,7 @@ flowchart TD
         SufficientInteractions -->|No| ContinueExploration[Continue Exploration]
         SufficientInteractions -->|Yes| NormalRecommendation[Normal Recommendation]
     end
-    
+
     AlphaBlend --> Final[Final Recommendations]
     NormalRecommendation --> Final
     ContinueExploration --> Final
