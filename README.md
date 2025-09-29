@@ -57,7 +57,7 @@ graph TB
 1. **Clone and start all services:**
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/sarihammad/recommendit.git
 cd recommendit
 docker-compose up --build
 ```
