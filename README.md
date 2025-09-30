@@ -44,6 +44,90 @@ graph TB
 - **Production Ready**: Docker containerization, Prometheus metrics, structured logging
 - **Modern Frontend**: Beautiful Next.js interface with responsive design and real-time recommendations
 
+
+
+## How It Works
+
+### Two-Stage Pipeline
+
+```mermaid
+flowchart TD
+    User[User Request] --> Recall[Recall Stage]
+
+    subgraph "Recall Stage - Candidate Generation"
+        Recall --> CF[Collaborative Filtering<br/>ALS Matrix Factorization]
+        Recall --> II[Item-Item Similarity<br/>Cosine Similarity]
+        Recall --> CB[Content-Based<br/>SBERT + Faiss]
+
+        CF --> Candidates[~1000 Candidates]
+        II --> Candidates
+        CB --> Candidates
+    end
+
+    Candidates --> Rank[Ranking Stage]
+
+    subgraph "Ranking Stage - Re-ranking"
+        Rank --> Features[Feature Engineering<br/>CF + Content + User + Item + Context]
+        Features --> LGBM[LightGBM Ranker<br/>LambdaRank Objective]
+        LGBM --> Diversity[MMR Diversity]
+        Diversity --> Exploration[ε-greedy Exploration]
+        Exploration --> Final[Final Top-K Recommendations]
+    end
+
+    Final --> Response[Response to User]
+```
+
+1. **Recall Stage** (Candidate Generation):
+
+   - **Collaborative Filtering**: ALS matrix factorization for user-item interactions
+   - **Item-Item Similarity**: Cosine similarity based on co-occurrence patterns
+   - **Content-Based**: SBERT embeddings for text similarity using Faiss
+
+2. **Ranking Stage** (Re-ranking):
+   - **Feature Engineering**: CF scores, content scores, user features, item features, context
+   - **LightGBM Ranking**: LambdaRank objective for optimal ordering
+   - **Diversity & Exploration**: MMR for diversity, ε-greedy for exploration
+
+### Cold Start Strategies
+
+```mermaid
+flowchart TD
+    Request[User Request] --> Check{User Type?}
+
+    Check -->|New User| NewUser[New User Strategy]
+    Check -->|Existing User| ExistingUser[Existing User Strategy]
+
+    subgraph "New User Strategy"
+        NewUser --> ContentOnly[Content-Based Only]
+        ContentOnly --> Popularity[Popularity Fallback]
+        Popularity --> AlphaBlend[Alpha Blending<br/>α = 0.0 (Content Only)]
+    end
+
+    subgraph "Existing User Strategy"
+        ExistingUser --> InteractionCount{Interaction Count}
+        InteractionCount -->|Low| LowInteractions[Low Interactions<br/>α = 0.3 (More Content)]
+        InteractionCount -->|High| HighInteractions[High Interactions<br/>α = 0.8 (More CF)]
+        LowInteractions --> AlphaBlend
+        HighInteractions --> AlphaBlend
+    end
+
+    subgraph "New Item Strategy"
+        NewItem[New Item] --> ContentANN[Content ANN Search]
+        ContentANN --> Exploration[Exploration Boost]
+        Exploration --> SufficientInteractions{Sufficient Interactions?}
+        SufficientInteractions -->|No| ContinueExploration[Continue Exploration]
+        SufficientInteractions -->|Yes| NormalRecommendation[Normal Recommendation]
+    end
+
+    AlphaBlend --> Final[Final Recommendations]
+    NormalRecommendation --> Final
+    ContinueExploration --> Final
+```
+
+- **New Users**: Content-only recommendations with popularity fallback
+- **New Items**: Content ANN with exploration until sufficient interactions
+- **Alpha Blending**: Dynamic CF vs content weight based on user interaction count
+
 ## Quick Start
 
 ### Prerequisites
@@ -129,88 +213,6 @@ curl -X POST "http://localhost:8000/feedback" \
     "timestamp": "2024-01-15T10:30:00Z"
   }'
 ```
-
-## How It Works
-
-### Two-Stage Pipeline
-
-```mermaid
-flowchart TD
-    User[User Request] --> Recall[Recall Stage]
-
-    subgraph "Recall Stage - Candidate Generation"
-        Recall --> CF[Collaborative Filtering<br/>ALS Matrix Factorization]
-        Recall --> II[Item-Item Similarity<br/>Cosine Similarity]
-        Recall --> CB[Content-Based<br/>SBERT + Faiss]
-
-        CF --> Candidates[~1000 Candidates]
-        II --> Candidates
-        CB --> Candidates
-    end
-
-    Candidates --> Rank[Ranking Stage]
-
-    subgraph "Ranking Stage - Re-ranking"
-        Rank --> Features[Feature Engineering<br/>CF + Content + User + Item + Context]
-        Features --> LGBM[LightGBM Ranker<br/>LambdaRank Objective]
-        LGBM --> Diversity[MMR Diversity]
-        Diversity --> Exploration[ε-greedy Exploration]
-        Exploration --> Final[Final Top-K Recommendations]
-    end
-
-    Final --> Response[Response to User]
-```
-
-1. **Recall Stage** (Candidate Generation):
-
-   - **Collaborative Filtering**: ALS matrix factorization for user-item interactions
-   - **Item-Item Similarity**: Cosine similarity based on co-occurrence patterns
-   - **Content-Based**: SBERT embeddings for text similarity using Faiss
-
-2. **Ranking Stage** (Re-ranking):
-   - **Feature Engineering**: CF scores, content scores, user features, item features, context
-   - **LightGBM Ranking**: LambdaRank objective for optimal ordering
-   - **Diversity & Exploration**: MMR for diversity, ε-greedy for exploration
-
-### Cold Start Strategies
-
-```mermaid
-flowchart TD
-    Request[User Request] --> Check{User Type?}
-
-    Check -->|New User| NewUser[New User Strategy]
-    Check -->|Existing User| ExistingUser[Existing User Strategy]
-
-    subgraph "New User Strategy"
-        NewUser --> ContentOnly[Content-Based Only]
-        ContentOnly --> Popularity[Popularity Fallback]
-        Popularity --> AlphaBlend[Alpha Blending<br/>α = 0.0 (Content Only)]
-    end
-
-    subgraph "Existing User Strategy"
-        ExistingUser --> InteractionCount{Interaction Count}
-        InteractionCount -->|Low| LowInteractions[Low Interactions<br/>α = 0.3 (More Content)]
-        InteractionCount -->|High| HighInteractions[High Interactions<br/>α = 0.8 (More CF)]
-        LowInteractions --> AlphaBlend
-        HighInteractions --> AlphaBlend
-    end
-
-    subgraph "New Item Strategy"
-        NewItem[New Item] --> ContentANN[Content ANN Search]
-        ContentANN --> Exploration[Exploration Boost]
-        Exploration --> SufficientInteractions{Sufficient Interactions?}
-        SufficientInteractions -->|No| ContinueExploration[Continue Exploration]
-        SufficientInteractions -->|Yes| NormalRecommendation[Normal Recommendation]
-    end
-
-    AlphaBlend --> Final[Final Recommendations]
-    NormalRecommendation --> Final
-    ContinueExploration --> Final
-```
-
-- **New Users**: Content-only recommendations with popularity fallback
-- **New Items**: Content ANN with exploration until sufficient interactions
-- **Alpha Blending**: Dynamic CF vs content weight based on user interaction count
 
 ## Performance Metrics
 
