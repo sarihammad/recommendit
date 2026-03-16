@@ -11,6 +11,6 @@ venv/
 env/
 data/ml-1m/
 data/features/
-models/
+/models/
 *.parquet
 .DS_Store
