@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+data/ml-1m/
+data/features/
+models/
+*.parquet
+.DS_Store
