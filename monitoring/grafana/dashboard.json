@@ -1,0 +1,223 @@
+{
+  "id": null,
+  "uid": "recommendit-main",
+  "title": "RecommendIt — ML Recommendation Service",
+  "description": "Monitoring dashboard for the RecommendIt recommendation API",
+  "tags": ["recommendit", "ml", "recommendations"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Requests",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{job=\"recommendit-api\"})",
+          "legendFormat": "Total Requests"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Request Rate (req/s)",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"recommendit-api\"}[1m]))",
+          "legendFormat": "req/s"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Cache Hit Rate",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "recommendation_cache_hits_total / (recommendation_cache_hits_total + recommendation_cache_misses_total)",
+          "legendFormat": "Hit Rate"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "unit": "percentunit"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "P99 Recommendation Latency",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(recommendation_latency_ms_bucket[5m])) by (le))",
+          "legendFormat": "P99 ms"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "thresholds": {
+          "steps": [
+            { "value": null, "color": "green" },
+            { "value": 100, "color": "yellow" },
+            { "value": 500, "color": "red" }
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Request Latency Percentiles (seconds)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])) by (le))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])) by (le))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Recommendation Pipeline Breakdown (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(retrieval_latency_ms_bucket[5m])) by (le))",
+          "legendFormat": "FAISS Retrieval P50"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(ranking_latency_ms_bucket[5m])) by (le))",
+          "legendFormat": "LightGBM Ranking P50"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(recommendation_latency_ms_bucket[5m])) by (le))",
+          "legendFormat": "Total Pipeline P50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "HTTP Requests per Second by Endpoint",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"recommendit-api\"}[1m])) by (endpoint)",
+          "legendFormat": "{{endpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Cache Hits vs Misses",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(recommendation_cache_hits_total[1m])",
+          "legendFormat": "Cache Hits/s"
+        },
+        {
+          "expr": "rate(recommendation_cache_misses_total[1m])",
+          "legendFormat": "Cache Misses/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2 }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Active Requests",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 18 },
+      "targets": [
+        {
+          "expr": "active_requests",
+          "legendFormat": "Active Requests"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Candidates Retrieved per Request",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 18 },
+      "targets": [
+        {
+          "expr": "candidates_retrieved_total",
+          "legendFormat": "ANN Candidates"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Error Rate",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 18 },
+      "targets": [
+        {
+          "expr": "rate(recommendation_errors_total[1m])",
+          "legendFormat": "{{error_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        }
+      }
+    }
+  ]
+}
