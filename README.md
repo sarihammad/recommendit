@@ -5,7 +5,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Two-Tower candidate generation with FAISS ANN search and LightGBM LambdaMART re-ranking, trained on MovieLens 1M. Achieves **NDCG@10 of 0.143** — a 3.5× improvement over the popularity baseline — with sub-20ms end-to-end latency.
+Two-Tower candidate generation with LambdaMART re-ranking. Trained on MovieLens 1M. Achieves **NDCG@10 of 0.143**. A 3.5× improvement over the popularity baseline with sub-20ms end-to-end latency.
 
 ---
 
