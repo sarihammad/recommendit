@@ -1,4 +1,4 @@
-# Two-Stage Movie Recommender System
+# Two-Stage Recommender System
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.1-orange?logo=pytorch)
