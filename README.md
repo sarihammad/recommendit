@@ -5,9 +5,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Two-Tower candidate generation with FAISS ANN search and LightGBM LambdaMART re-ranking, trained on MovieLens 1M. Achieves **NDCG@10 of 0.143** — a 3.5× improvement over the popularity baseline — with sub-20ms end-to-end latency. Covers the full production stack: online feature store, Redis caching, training-serving skew detection, and Prometheus observability.
-
-> The architecture mirrors what YouTube, Netflix, and Spotify run in production: a fast recall stage (Two-Tower + FAISS) followed by a precision-optimized re-ranking stage (LambdaMART). The modeling is not the hard part — the online feature store, inference pipeline, and skew detection are.
+Two-Tower candidate generation with FAISS ANN search and LightGBM LambdaMART re-ranking, trained on MovieLens 1M. Achieves **NDCG@10 of 0.143** — a 3.5× improvement over the popularity baseline — with sub-20ms end-to-end latency.
 
 ---
 
@@ -49,17 +47,13 @@ Evaluated on MovieLens 1M test set (90/10 split by interaction time):
 
 ## Key Design Decisions
 
-**Why Two-Tower + FAISS?**
-Scoring all user-item pairs scales as O(users × items) — infeasible at catalog scale. Two-Tower decouples the problem: item embeddings are precomputed and indexed in FAISS once. At query time only the user tower runs (one forward pass), and ANN retrieval over the full catalog takes ~6ms via IVF quantization. `n_probe=10` gives a tunable accuracy/latency tradeoff; raising it to 50 adds ~8ms and recovers most of the approximate-vs-exact gap.
+**Two-Tower + FAISS:** Item embeddings are precomputed and indexed once. At query time only the user tower runs; IVF quantization with `n_probe=10` gives a tunable accuracy/latency tradeoff at ~6ms.
 
-**Why LambdaMART over pointwise loss?**
-LambdaMART directly optimizes NDCG — the metric you actually care about. It accounts for position in the ranked list (rank 1 matters more than rank 10) and handles the implicit feedback exposure problem. Pointwise regression treats this as MSE over click signals; LambdaMART treats it as what it is: a ranking problem.
+**LambdaMART over pointwise loss:** Directly optimizes NDCG, accounting for rank position. Pointwise regression treats ranking as MSE; it isn't.
 
-**Why BPR for the embedding model?**
-Bayesian Personalized Ranking maximizes the probability that an interacted item ranks above a randomly sampled non-interacted one. It never assumes a user *doesn't* like an unseen item — only that interacted items are *relatively* preferred. For implicit feedback (ratings, clicks) this is the correct inductive bias. Cross-entropy would treat all unrated items as negatives, which is false.
+**BPR loss:** Maximizes P(interacted item ranks above random non-interacted item). Correct inductive bias for implicit feedback — cross-entropy treats all unrated items as negatives.
 
-**Why Redis for the feature store?**
-Training and serving use the same Redis keys and the same serialization format. This is the only guarantee that feature values at inference match what was seen at training. Using different codepaths for training vs. serving is the primary cause of training-serving skew. The in-memory fallback ensures tests run without a Redis instance.
+**Redis feature store:** Training and serving use the same Redis keys and serialization. No divergent codepaths, no skew.
 
 ---
 
@@ -140,7 +134,7 @@ make load-features        # populate Redis
 
 ### `GET /model/info`
 
-Returns model versions, FAISS index stats, top-10 LambdaMART feature importances by gain, and pipeline latency percentiles.
+Model versions, FAISS index stats, top-10 LambdaMART feature importances by gain, pipeline latency percentiles.
 
 ### `GET /metrics`
 
